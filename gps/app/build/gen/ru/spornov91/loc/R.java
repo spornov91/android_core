@@ -14,6 +14,7 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
+        public static final int btn_open_maps=0x7f060006;
         public static final int tvEnabledGPS=0x7f060000;
         public static final int tvEnabledNet=0x7f060003;
         public static final int tvLocationGPS=0x7f060002;
