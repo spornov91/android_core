@@ -20,11 +20,6 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 		
-		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-        
-		final TextView tvJsonData = findViewById(R.id.mainTextView);
-		
 		Button getUserGithub = findViewById(R.id.btnGetUserGithub);
 		getUserGithub.setOnClickListener(new View.OnClickListener() {
 				@Override
