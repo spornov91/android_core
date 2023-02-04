@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.BufferedInputStream;
 import java.net.MalformedURLException;
+import java.io.BufferedWriter;
 
 public class MainActivity extends Activity 
 {
@@ -92,12 +93,12 @@ public class MainActivity extends Activity
             HttpURLConnection urlConnection = null;
             try {
                 urlConnection = (HttpURLConnection) url.openConnection();
-
+				//urlConnection.setRequestProperty("Accept-Charset", "UTF-8");
+				urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:221.0) Gecko/20100101 Firefox/31.0");
                 urlConnection.setRequestMethod("POST");
                 urlConnection.setReadTimeout(5000);
                 urlConnection.setConnectTimeout(10000);
                 urlConnection.setDoOutput(true);
-				urlConnection.setRequestProperty("Accept-Charset", "UTF-8");
 				
                 OutputStream os = urlConnection.getOutputStream();
                 os.write(params.getBytes());
