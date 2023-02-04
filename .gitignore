@@ -1,1 +1,7 @@
-app/build/
+json/app/build/
+post/app/build/
+sqlite/app/build/
+http/app/build/
+gps/app/build/
+fragments/app/build/
+picker/app/build/
