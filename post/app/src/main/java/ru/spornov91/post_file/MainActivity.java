@@ -17,81 +17,161 @@ import java.io.InputStreamReader;
 import java.io.BufferedInputStream;
 import java.net.MalformedURLException;
 import java.io.BufferedWriter;
+import android.content.Intent;
+import android.net.Uri;
+import java.io.FileInputStream;
+import java.io.DataOutputStream;
+import android.Manifest;
+import android.content.pm.PackageManager;
 
 public class MainActivity extends Activity 
 {
 	public String TAG = "spornov91";
+
+	String upload_url = "http://z91374e0.beget.tech/upload.php";
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-		final TextView post_request = findViewById(R.id.postRequest);
-		final TextView text_status = findViewById(R.id.status);
-		Thread t = new Thread(new Runnable() { 
-				public void run() {
-					
-					String url = "http://z91374e0.beget.tech/upload.php";
-					String query = "type=file&version=1.1";
-					
-					final String post_response = doPost(url, query);
-					
-                    new Handler(getMainLooper()).post(
-						new Runnable() {
-							@Override
-							public void run () {
-								post_request.setText(post_response);
-								text_status.setText("Файл отправлен!");
-							}
-					});
-		}});
-		t.start();
-    }
-	
-	String sendfile (String filename, String filepath) throws IOException {
-		String boundary = Long.toHexString(System.currentTimeMillis());
-		String charset = "UTF-8";
-		URL url = new URL("...");
-		File file = new File(filepath);
-		HttpURLConnection con = (HttpURLConnection) url.openConnection();
-		con.setRequestMethod("POST");
-		con.setUseCaches(false);
-		con.setDoOutput(true);
-		con.setDoInput(true);
-		con.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-		OutputStream os = con.getOutputStream();
-		PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, charset), true);
-		return "";
+
+
+		Intent intent = new Intent()
+			.setType("*/*")
+			.setAction(Intent.ACTION_GET_CONTENT);
+
+        startActivityForResult(Intent.createChooser(intent, "Выберите файл"), 1);
+
 	};
 	
-	void getFile(String url){
-		HttpURLConnection c = null;
-		try {
-			URL u = new URL(url);
-			c = (HttpURLConnection) u.openConnection();
-			c.setRequestMethod("GET");
-			c.setRequestProperty("Content-length", "0");
-			c.setUseCaches(false);
-			c.setAllowUserInteraction(false);
-			c.connect();
-			int status = c.getResponseCode();
-			Log.d("status",""+status);
-		}catch (IOException ex) {
+	@Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+	{
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1 && resultCode == RESULT_OK)
+		{
 
-		} finally {}
-	}
-	
+            int REQUEST_CODE_PERMISSIONS = 1;
+		    int permissionStatus = getApplicationContext().checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
+
+		    if (permissionStatus == PackageManager.PERMISSION_GRANTED)
+			{
+
+				String path0 = Environment.getExternalStorageDirectory().toString();
+
+				try
+				{
+					Uri selectedfile = data.getData();
+					String path1 = selectedfile.getPath().split(":")[1];
+					Log.d(TAG, path1);
+					final String filepath = path0 + "/" + path1;
+					final String filename = selectedfile.getLastPathSegment();
+
+					final TextView post_request = findViewById(R.id.postRequest);
+					final TextView text_status = findViewById(R.id.status);
+
+					Thread t = new Thread(new Runnable() { 
+							public void run()
+							{
+
+								final String post_response = postFile(upload_url, filename, filepath);
+
+								new Handler(getMainLooper()).post(
+									new Runnable() {
+										@Override
+										public void run()
+										{
+											post_request.setText(post_response);
+											text_status.setText("Файл отправлен!");
+										}
+									});
+							}});
+					t.start();
+
+				}
+				finally
+				{}
+
+			}
+			else
+			{
+				requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE_PERMISSIONS);
+			}}
+    }
+
+	/**
+     * HttpURLConnection POST FILE
+     * @param urlString
+     * @param paramName
+	 * @param filePath
+     * @return
+     */
+	private static String postFile(String urlString, String paramName, String filePath)
+	{
+		try
+		{
+
+	        String BOUNDARY_PREFIX = "--";
+	        String LINE_END = "\r\n";
+			String boundary = "MyBoundary" + System.currentTimeMillis();
+
+			URL url = new URL(urlString);
+            HttpURLConnection urlConnection = null;
+			urlConnection = (HttpURLConnection) url.openConnection();
+			urlConnection.setRequestMethod("POST");
+			urlConnection.setRequestProperty("Accept-Charset", "UTF-8");
+			urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:221.0) Gecko/20100101 Firefox/31.0");
+			urlConnection.setRequestProperty("Connection", "Keep-Alive");
+			urlConnection.setRequestProperty("Cache-Control", "no-cache");
+			urlConnection.setReadTimeout(5000);
+			urlConnection.setConnectTimeout(10000);
+			urlConnection.setDoOutput(true);
+
+			urlConnection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+			DataOutputStream out = new DataOutputStream(urlConnection.getOutputStream());
+
+            FileInputStream fis = new FileInputStream(filePath);
+
+            String boundaryStr = BOUNDARY_PREFIX + boundary + LINE_END;
+            out.write(boundaryStr.getBytes());
+
+            String fileName = new File(filePath).getName();
+            String contentDispositionStr = String.format("Content-Disposition: form-data; name=\"%s\"; filename=\"%s\"", paramName, fileName) + LINE_END;
+            out.write(contentDispositionStr.getBytes());
+            String contentType = "Content-Type: application/octet-stream" + LINE_END + LINE_END;
+            out.write(contentType.getBytes());
+            int len;
+            byte[] buf = new byte[100];
+            while ((len = fis.read(buf)) != -1)
+			{
+                out.write(buf, 0, len);
+            }
+
+            out.write(LINE_END.getBytes());
+        }
+		catch (Exception e)
+		{
+            Log.e("writeFile", "" + e);
+        }
+		return "2";
+    }
+
 	/**
      * HttpURLConnection POST
      * @param urlString
      * @param params
      * @return
      */
-    public String doPost(String urlString, String params) {
-        try {
+    public String doPost(String urlString, String params)
+	{
+        try
+		{
             URL url = new URL(urlString);
             HttpURLConnection urlConnection = null;
-            try {
+            try
+			{
                 urlConnection = (HttpURLConnection) url.openConnection();
 				//urlConnection.setRequestProperty("Accept-Charset", "UTF-8");
 				urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:221.0) Gecko/20100101 Firefox/31.0");
@@ -99,44 +179,43 @@ public class MainActivity extends Activity
                 urlConnection.setReadTimeout(5000);
                 urlConnection.setConnectTimeout(10000);
                 urlConnection.setDoOutput(true);
-				
+
                 OutputStream os = urlConnection.getOutputStream();
                 os.write(params.getBytes());
                 os.flush();
                 os.close();
 
                 int responseCode = urlConnection.getResponseCode();
-                Log.d(TAG, ""+responseCode);
-                if (responseCode == 200) {
+                Log.d(TAG, "" + responseCode);
+                if (responseCode == 200)
+				{
                     InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-                    return readStream(in);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
+					StringBuilder sb = new StringBuilder();
+					String line = null;
+					while ((line = br.readLine()) != null)
+					{
+						sb.append(line + "\n");
+					}
+					Log.e(TAG, sb.toString());
+					br.close();
+					return sb.toString();
                 }
 
-            } catch (IOException e) {
+            }
+			catch (IOException e)
+			{
                 e.printStackTrace();
-            } finally {
+            }
+			finally
+			{
                 urlConnection.disconnect();
             }
-        } catch (MalformedURLException e) {
+        }
+		catch (MalformedURLException e)
+		{
             e.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * @param in
-     * @return
-     * @throws IOException
-     */
-    private String readStream(InputStream in) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(in));
-        StringBuilder sb = new StringBuilder();
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            sb.append(line + "\n");
-        }
-        Log.e(TAG,sb.toString());
-        br.close();
-        return sb.toString();
     }
 }
