@@ -131,7 +131,6 @@ public class MainActivity extends Activity
 			urlConnection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
 			DataOutputStream out = new DataOutputStream(urlConnection.getOutputStream());
-
             FileInputStream fis = new FileInputStream(filePath);
 
             String boundaryStr = BOUNDARY_PREFIX + boundary + LINE_END;
